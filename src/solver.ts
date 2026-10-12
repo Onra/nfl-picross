@@ -1,11 +1,18 @@
 /** A cell the solver has not decided yet is null. */
 export type Knowledge = boolean | null;
 
+export interface Arrangement {
+  cells: boolean[];
+  /** Start index of each block, in clue order. */
+  starts: number[];
+}
+
 /** Every arrangement of `clues` in a line of `length` that agrees with `known`. */
-function arrangements(clues: number[], length: number, known: Knowledge[]): boolean[][] {
+export function arrangements(clues: number[], length: number, known: Knowledge[]): Arrangement[] {
   const blocks = clues[0] === 0 ? [] : clues;
-  const results: boolean[][] = [];
+  const results: Arrangement[] = [];
   const line: boolean[] = new Array(length).fill(false);
+  const starts: number[] = [];
 
   const agrees = (from: number, to: number) => {
     for (let i = from; i < to; i++) {
@@ -16,16 +23,18 @@ function arrangements(clues: number[], length: number, known: Knowledge[]): bool
 
   const place = (blockIndex: number, start: number) => {
     if (blockIndex === blocks.length) {
-      if (agrees(start, length)) results.push([...line]);
+      if (agrees(start, length)) results.push({ cells: [...line], starts: [...starts] });
       return;
     }
     const block = blocks[blockIndex];
     const remaining = blocks.slice(blockIndex + 1).reduce((sum, b) => sum + b + 1, 0);
     for (let pos = start; pos + block + remaining <= length; pos++) {
       line.fill(true, pos, pos + block);
+      starts.push(pos);
       // The cells from `start` up to the end of the block, plus the separator after it.
       const end = Math.min(pos + block + 1, length);
       if (agrees(start, end)) place(blockIndex + 1, end);
+      starts.pop();
       line.fill(false, pos, pos + block);
     }
   };
@@ -39,8 +48,8 @@ export function solveLine(clues: number[], known: Knowledge[]): Knowledge[] | nu
   const options = arrangements(clues, known.length, known);
   if (options.length === 0) return null;
   return known.map((_, i) => {
-    const first = options[0][i];
-    return options.every((option) => option[i] === first) ? first : null;
+    const first = options[0].cells[i];
+    return options.every((option) => option.cells[i] === first) ? first : null;
   });
 }
 

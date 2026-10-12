@@ -1,4 +1,5 @@
 import { column, computeClues, type Puzzle } from "./puzzle";
+import { arrangements, type Knowledge } from "./solver";
 
 /** `error` is a wrong fill: it shows as a red cross and can't be changed. */
 export type CellState = "empty" | "filled" | "crossed" | "error";
@@ -82,11 +83,43 @@ function lineMatches(cells: CellState[], clues: number[]): boolean {
   return actual.length === clues.length && actual.every((n, i) => n === clues[i]);
 }
 
-/** True when the filled cells of a row already match its clues (used to grey them out). */
+/** True when the filled cells of a row already match its clues, i.e. the line is complete. */
 export function rowSatisfied(game: Game, row: number): boolean {
   return lineMatches(game.cells[row], game.puzzle.rowClues[row]);
 }
 
 export function colSatisfied(game: Game, col: number): boolean {
   return lineMatches(column(game.cells, col), game.puzzle.colClues[col]);
+}
+
+/** What the player can see: filled cells are always correct, crosses and errors read as empty. */
+function playerKnowledge(cells: CellState[]): Knowledge[] {
+  return cells.map((cell) => (cell === "filled" ? true : cell === "empty" ? null : false));
+}
+
+/**
+ * For each clue number of a line, whether the player has found its block for sure:
+ * the block sits at the same place in every arrangement consistent with what the
+ * player sees, and all its cells are filled. Only visible information is used,
+ * so greying a number never gives away the solution.
+ */
+function cluesFound(cells: CellState[], clues: number[]): boolean[] {
+  if (lineMatches(cells, clues)) return clues.map(() => true);
+  if (clues[0] === 0) return [false];
+  const options = arrangements(clues, cells.length, playerKnowledge(cells));
+  // No consistent arrangement means a misplaced cross: don't claim anything.
+  if (options.length === 0) return clues.map(() => false);
+  return clues.map((length, i) => {
+    const start = options[0].starts[i];
+    if (!options.every((option) => option.starts[i] === start)) return false;
+    return cells.slice(start, start + length).every((cell) => cell === "filled");
+  });
+}
+
+export function rowCluesFound(game: Game, row: number): boolean[] {
+  return cluesFound(game.cells[row], game.puzzle.rowClues[row]);
+}
+
+export function colCluesFound(game: Game, col: number): boolean[] {
+  return cluesFound(column(game.cells, col), game.puzzle.colClues[col]);
 }

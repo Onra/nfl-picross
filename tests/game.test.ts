@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { applyAction, newGame, penaltyForError, rowSatisfied, colSatisfied } from "../src/game";
+import {
+  applyAction,
+  colCluesFound,
+  colSatisfied,
+  newGame,
+  penaltyForError,
+  rowCluesFound,
+  rowSatisfied,
+} from "../src/game";
 import { parsePuzzle } from "../src/puzzle";
 import { formatTime, Stopwatch, totalMs } from "../src/timer";
 
@@ -88,5 +96,55 @@ describe("timer", () => {
     stopwatch.stop();
     now = 9_000;
     expect(stopwatch.elapsedMs()).toBe(3_000);
+  });
+});
+
+describe("clue numbers found", () => {
+  // Row 0: ##...##### → clues [2, 5]
+  const wide = parsePuzzle({
+    id: "w",
+    title: "W",
+    palette: { A: "#000" },
+    grid: ["AA...AAAAA", ...Array(9).fill("..........")],
+  });
+
+  it("finds nothing on an empty line", () => {
+    expect(rowCluesFound(newGame(wide), 0)).toEqual([false, false]);
+  });
+
+  it("finds a block anchored to the edge", () => {
+    const game = newGame(wide);
+    applyAction(game, 0, 0, "fill");
+    applyAction(game, 0, 1, "fill");
+    expect(rowCluesFound(game, 0)).toEqual([true, false]);
+  });
+
+  it("does not claim a block whose position is still ambiguous", () => {
+    // Clues [2, 5]: a single filled cell at col 8 belongs to the 5, but the 5 isn't placed yet.
+    const game = newGame(wide);
+    applyAction(game, 0, 8, "fill");
+    expect(rowCluesFound(game, 0)).toEqual([false, false]);
+  });
+
+  it("uses only what the player sees, never the solution", () => {
+    // Filling cols 5-9 places the 5. The 2 is then confined to cols 0-3 but not filled yet.
+    const game = newGame(wide);
+    for (let c = 5; c <= 9; c++) applyAction(game, 0, c, "fill");
+    expect(rowCluesFound(game, 0)).toEqual([false, true]);
+  });
+
+  it("claims nothing when a misplaced cross makes the line contradictory", () => {
+    const game = newGame(wide);
+    applyAction(game, 0, 0, "fill");
+    applyAction(game, 0, 1, "fill");
+    for (let c = 3; c <= 9; c++) applyAction(game, 0, c, "cross");
+    expect(rowCluesFound(game, 0)).toEqual([false, false]);
+  });
+
+  it("finds every number once the line is complete", () => {
+    const game = newGame(puzzle);
+    applyAction(game, 0, 0, "fill");
+    expect(rowCluesFound(game, 0)).toEqual([true]);
+    expect(colCluesFound(game, 1)).toEqual([false]);
   });
 });
