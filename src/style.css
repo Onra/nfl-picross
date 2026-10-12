@@ -40,6 +40,13 @@ body {
     repeating-linear-gradient(90deg, transparent 0 158px, rgba(255, 255, 255, 0.16) 158px 162px),
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.045) 0 80px, transparent 80px 160px);
   background-attachment: fixed;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* No double-tap zoom delay on controls. */
+button,
+a {
+  touch-action: manipulation;
 }
 
 #app {
@@ -413,6 +420,78 @@ button {
   --cell: clamp(15px, calc((100vw - 140px) / 16.5), 34px);
 }
 
+/* ---- Tap mode switch (touch screens only) ---------------------------- */
+
+.tap-mode {
+  display: none;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--strip-alt);
+  box-shadow: inset 0 2px 4px rgba(120, 100, 60, 0.18);
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  min-height: 48px;
+  justify-content: center;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #8d846f;
+  font-weight: 700;
+  font-size: 1.05rem;
+  transition: background-color 0.12s, color 0.12s, box-shadow 0.12s;
+}
+
+.mode-btn[aria-checked="true"] {
+  background: var(--navy);
+  color: #fff;
+  box-shadow: 0 3px 0 #0b1528;
+}
+
+.mode-icon {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+.mode-icon.fill {
+  background: var(--fill);
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.25);
+}
+
+.mode-btn[aria-checked="true"] .mode-icon.fill {
+  background: var(--gold);
+}
+
+.mode-icon.cross::before,
+.mode-icon.cross::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 3px;
+  margin-top: -1.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: rotate(45deg);
+}
+
+.mode-icon.cross::after {
+  transform: rotate(-45deg);
+}
+
+.board.revealed ~ .tap-mode {
+  display: none;
+}
+
 .major-left {
   margin-left: var(--major-gap);
 }
@@ -488,8 +567,10 @@ button {
   background: var(--tile-hl);
 }
 
-.cell:hover {
-  background: #ffe48a;
+@media (hover: hover) {
+  .cell:hover {
+    background: #ffe48a;
+  }
 }
 
 .cell[data-state="filled"] {
@@ -500,9 +581,14 @@ button {
   animation: pop 0.18s ease-out;
 }
 
-.cell[data-state="filled"].hl,
-.cell[data-state="filled"]:hover {
+.cell[data-state="filled"].hl {
   background: var(--fill-hl);
+}
+
+@media (hover: hover) {
+  .cell[data-state="filled"]:hover {
+    background: var(--fill-hl);
+  }
 }
 
 @keyframes pop {
@@ -760,12 +846,14 @@ button {
   transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
 }
 
-.tile:hover {
-  transform: translateY(-3px);
-  background: var(--tile-hl);
-  box-shadow:
-    inset 0 2px 0 #fff,
-    0 8px 0 var(--card-base);
+@media (hover: hover) {
+  .tile:hover {
+    transform: translateY(-3px);
+    background: var(--tile-hl);
+    box-shadow:
+      inset 0 2px 0 #fff,
+      0 8px 0 var(--card-base);
+  }
 }
 
 .tile:active {
@@ -819,6 +907,24 @@ button {
 
 /* ---- Help ------------------------------------------------------------- */
 
+.help.touch-help {
+  display: none;
+}
+
+@media (any-pointer: coarse) {
+  .tap-mode,
+  .help.touch-help {
+    display: flex;
+  }
+}
+
+/* Touch-only devices have no mouse to describe. */
+@media (hover: none) {
+  .help.mouse-help {
+    display: none;
+  }
+}
+
 .help {
   display: flex;
   flex-wrap: wrap;
@@ -854,8 +960,55 @@ button {
 
 /* Phones: tighter spacing so 15×15 fits without horizontal scroll. */
 @media (max-width: 520px) {
+  #app {
+    gap: 16px;
+    padding: 12px 8px 24px;
+  }
+
   .card {
-    padding: 14px 12px 16px 8px;
+    padding: 14px 10px 16px 6px;
+  }
+
+  /* In a puzzle, drop the logo so the scoreboard stays on one row. */
+  .scoreboard {
+    gap: 10px 12px;
+    padding: 10px 12px;
+  }
+
+  .scoreboard .back ~ .brand {
+    display: none;
+  }
+
+  .stat {
+    min-width: 0;
+    padding: 4px 10px 6px;
+  }
+
+  .card.home {
+    gap: 24px;
+    padding: 18px 14px;
+  }
+
+  .tiles {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .tile {
+    border-radius: 14px;
+  }
+
+  .tile-number {
+    font-size: 1.7rem;
+  }
+
+  /* Bigger cells for fingers: the board takes nearly the full width. */
+  .board.size-10 {
+    --cell: max(22px, calc((100vw - 104px) / 10.6));
+  }
+
+  .board.size-15 {
+    --cell: max(15px, calc((100vw - 96px) / 16.2));
   }
 
   .board {
@@ -869,6 +1022,6 @@ button {
 
   .row-clue {
     padding: 0 5px 0 6px;
-    gap: 4px;
+    gap: max(4px, calc(var(--cell) * 0.2));
   }
 }

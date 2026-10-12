@@ -34,6 +34,12 @@ interface Drag {
 const LEFT_BUTTON = 0;
 const RIGHT_BUTTON = 2;
 
+/**
+ * What a primary click or tap does. Touch screens have no right click, so the
+ * on-screen Fill/Cross switch sets it; kept across puzzles.
+ */
+let tapMode: "fill" | "cross" = "fill";
+
 /** Which action a press starts, given the button and the pressed cell. */
 function actionFor(button: number, state: CellState): Action | null {
   if (button === LEFT_BUTTON) {
@@ -105,6 +111,10 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
     <main class="card">
       <p class="puzzle-label">${nav.label}</p>
       <div class="board size-${puzzle.size}" style="${boardTracks(puzzle.size)}"></div>
+      <div class="tap-mode" role="radiogroup" aria-label="Tap to">
+        <button type="button" class="mode-btn" data-mode="fill" role="radio"><span class="mode-icon fill"></span>Fill</button>
+        <button type="button" class="mode-btn" data-mode="cross" role="radio"><span class="mode-icon cross"></span>Cross</button>
+      </div>
       <div class="win" hidden>
         <p class="win-banner">Touchdown!</p>
         <h2 class="win-title"></h2>
@@ -116,7 +126,8 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
         </div>
       </div>
     </main>
-    <p class="help"><kbd>Left click</kbd> fill <kbd>Right click</kbd> cross <kbd>Drag</kbd> paint a line</p>
+    <p class="help mouse-help"><kbd>Left click</kbd> fill <kbd>Right click</kbd> cross <kbd>Drag</kbd> paint a line</p>
+    <p class="help touch-help"><kbd>Tap</kbd> fill or cross <kbd>Slide</kbd> paint a line</p>
   `;
 
   const board = root.querySelector<HTMLElement>(".board")!;
@@ -252,6 +263,7 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
         return true;
       case "error":
         sound.error();
+        navigator.vibrate?.(80);
         flashPenalty(result.penaltyMinutes);
         return false;
       case "solved":
@@ -290,23 +302,40 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
   }
 
   board.addEventListener("contextmenu", (event) => event.preventDefault());
-  board.addEventListener("pointerleave", () => setHover(null));
+  board.addEventListener("pointerleave", (event) => {
+    if (event.pointerType === "mouse") setHover(null);
+  });
 
   board.addEventListener("pointerdown", (event) => {
     const cell = cellAt(event.target);
     if (!cell || game.solved) return;
-    const action = actionFor(event.button, game.cells[cell.row][cell.col]);
+    // The Fill/Cross switch turns a primary press into a cross, like a right click.
+    const button = event.button === LEFT_BUTTON && tapMode === "cross" ? RIGHT_BUTTON : event.button;
+    const action = actionFor(button, game.cells[cell.row][cell.col]);
     if (!action) return;
     event.preventDefault();
+    setHover(cell);
     drag = { action, start: cell, axis: null, fills: 0, last: cell };
     if (!act(cell, action)) drag = null;
     render();
   });
 
   board.addEventListener("pointerover", (event) => {
-    const cell = cellAt(event.target);
+    if (event.pointerType === "mouse") setHover(cellAt(event.target));
+  });
+
+  // Touch input stays captured by the first cell touched, so the cell under the
+  // finger is looked up from its position rather than from the event target.
+  board.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const cell = cellAt(document.elementFromPoint(event.clientX, event.clientY));
+    if (!cell) return;
     setHover(cell);
-    if (!drag || !cell) return;
+    extendDrag(cell);
+  });
+
+  function extendDrag(cell: Cell): void {
+    if (!drag) return;
     const { start } = drag;
     if (!drag.axis) {
       if (cell.row === start.row && cell.col !== start.col) drag.axis = "row";
@@ -328,12 +357,26 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
       }
     }
     render();
-  });
+  }
 
-  const endDrag = () => {
+  const endDrag = (event: PointerEvent) => {
     drag = null;
+    if (event.pointerType !== "mouse") setHover(null);
   };
   window.addEventListener("pointerup", endDrag);
+  window.addEventListener("pointercancel", endDrag);
+
+  const modeBtns = [...root.querySelectorAll<HTMLButtonElement>(".mode-btn")];
+  function renderMode(): void {
+    for (const btn of modeBtns) btn.setAttribute("aria-checked", String(btn.dataset.mode === tapMode));
+  }
+  for (const btn of modeBtns) {
+    btn.addEventListener("click", () => {
+      tapMode = btn.dataset.mode as typeof tapMode;
+      renderMode();
+    });
+  }
+  renderMode();
 
   const unbindAudio = bindAudioToggles(root, sound);
   root.querySelector(".back")!.addEventListener("click", nav.onBack);
@@ -358,6 +401,7 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, 
   return () => {
     window.clearInterval(clock);
     window.removeEventListener("pointerup", endDrag);
+    window.removeEventListener("pointercancel", endDrag);
     unbindAudio();
   };
 }

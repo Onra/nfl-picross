@@ -8,8 +8,11 @@ const root = document.querySelector<HTMLElement>("#app")!;
 const sound = new SoundBoard();
 let cleanup = () => {};
 
-// Audio can only start after a user gesture.
-window.addEventListener("pointerdown", () => sound.unlock(), { capture: true });
+// Audio can only start after a user gesture. iOS Safari only accepts some gestures
+// (touchend, click), so listen to those as well.
+for (const type of ["pointerdown", "touchend", "click"]) {
+  window.addEventListener(type, () => sound.unlock(), { capture: true });
+}
 
 /** Hash routes: "#/" is the puzzle list, "#/play/<id>" a puzzle. */
 function route(): void {
