@@ -1,0 +1,14 @@
+{
+  "id": "rookie-05",
+  "title": "Megaphone",
+  "palette": {
+    "A": "#9aa3ad"
+  },
+  "grid": [
+    "....A",
+    "..AAA",
+    "AAAAA",
+    "..AAA",
+    "....A"
+  ]
+}

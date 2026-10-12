@@ -12,6 +12,8 @@ import {
 import type { Puzzle } from "./puzzle";
 import { formatTime, Stopwatch, totalMs } from "./timer";
 import type { SoundBoard } from "./audio";
+import { BACK_ICON, bindAudioToggles, BRAND_HTML, TOGGLES_HTML } from "./chrome";
+import { bestResult, recordResult } from "./progress";
 
 interface Cell {
   row: number;
@@ -61,10 +63,24 @@ function cellsBetween(from: Cell, to: Cell, axis: "row" | "col"): Cell[] {
   }
   return cells;
 }
-const MUSIC_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V6l11-2v12" /><circle cx="6" cy="18" r="3" /><circle cx="17" cy="16" r="3" /></svg>`;
-const SFX_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" /><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12" /></svg>`;
 
-export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard): void {
+/** Grid tracks: a clue track, then one per cell, every 5th widened to set the groups apart. */
+function boardTracks(size: number): string {
+  const tracks = Array.from({ length: size }, (_, i) => (i % 5 === 0 && i > 0 ? "var(--major-track)" : "var(--cell)"));
+  const template = `auto ${tracks.join(" ")}`;
+  return `grid-template-columns: ${template}; grid-template-rows: ${template}`;
+}
+
+export interface GameNav {
+  /** Label shown above the board, e.g. "Rookie · #03". */
+  label: string;
+  onBack: () => void;
+  /** Present when there is a puzzle after this one. */
+  onNext?: () => void;
+}
+
+/** Renders a puzzle screen into `root`. Returns a cleanup function for when the screen is left. */
+export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard, nav: GameNav): () => void {
   let game: Game;
   let stopwatch: Stopwatch;
   let drag: Drag | null = null;
@@ -73,10 +89,8 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
 
   root.innerHTML = `
     <header class="scoreboard">
-      <div class="brand">
-        <span class="brand-ball" aria-hidden="true"></span>
-        <h1>NFL <span>Picross</span></h1>
-      </div>
+      <button type="button" class="toggle back" aria-label="All puzzles">${BACK_ICON}</button>
+      ${BRAND_HTML}
       <div class="stat">
         <span class="stat-label">Time</span>
         <span class="time">00:00</span>
@@ -86,18 +100,20 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
         <span class="stat-label">Errors</span>
         <span class="errors">0</span>
       </div>
-      <div class="toggles">
-        <button type="button" class="toggle music" aria-label="Music">${MUSIC_ICON}</button>
-        <button type="button" class="toggle sfx" aria-label="Sound effects">${SFX_ICON}</button>
-      </div>
+      ${TOGGLES_HTML}
     </header>
     <main class="card">
-      <div class="board" style="--size: ${puzzle.size}"></div>
+      <p class="puzzle-label">${nav.label}</p>
+      <div class="board size-${puzzle.size}" style="${boardTracks(puzzle.size)}"></div>
       <div class="win" hidden>
         <p class="win-banner">Touchdown!</p>
         <h2 class="win-title"></h2>
         <p class="win-time"></p>
-        <button type="button" class="again">Play again</button>
+        <div class="win-actions">
+          ${nav.onNext ? `<button type="button" class="btn primary next">Next puzzle</button>` : ""}
+          <button type="button" class="btn again">Play again</button>
+          <button type="button" class="btn ghost all">All puzzles</button>
+        </div>
       </div>
     </main>
     <p class="help"><kbd>Left click</kbd> fill <kbd>Right click</kbd> cross <kbd>Drag</kbd> paint a line</p>
@@ -108,8 +124,6 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
   const errorsEl = root.querySelector<HTMLElement>(".errors")!;
   const penaltyEl = root.querySelector<HTMLElement>(".penalty")!;
   const winEl = root.querySelector<HTMLElement>(".win")!;
-  const musicBtn = root.querySelector<HTMLButtonElement>(".toggle.music")!;
-  const sfxBtn = root.querySelector<HTMLButtonElement>(".toggle.sfx")!;
 
   // Board: a (size+1)² grid with the corner, column clues on top and row clues on the left.
   board.append(Object.assign(document.createElement("div"), { className: "corner" }));
@@ -220,9 +234,13 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
       }
     }
     render();
+    const timeMs = totalMs(stopwatch.elapsedMs(), game.penaltyMinutes);
+    const previous = bestResult(puzzle.id);
+    const isBest = recordResult(puzzle.id, { timeMs, errors: game.errors });
+    const errors = game.errors > 0 ? `${game.errors} error${game.errors > 1 ? "s" : ""}` : "Perfect game";
+    const record = isBest && previous ? " · New best!" : !isBest && previous ? ` · Best ${formatTime(previous.timeMs)}` : "";
     winEl.querySelector(".win-title")!.textContent = puzzle.title;
-    winEl.querySelector(".win-time")!.textContent =
-      `${timeEl.textContent} · ` + (game.errors > 0 ? `${game.errors} error${game.errors > 1 ? "s" : ""}` : "Perfect game");
+    winEl.querySelector(".win-time")!.textContent = `${formatTime(timeMs)} · ${errors}${record}`;
     winEl.hidden = false;
   }
 
@@ -312,28 +330,15 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
     render();
   });
 
-  window.addEventListener("pointerup", () => {
+  const endDrag = () => {
     drag = null;
-  });
+  };
+  window.addEventListener("pointerup", endDrag);
 
-  // Audio can only start after a user gesture.
-  window.addEventListener("pointerdown", () => sound.unlock(), { capture: true });
-
-  function renderToggles(): void {
-    musicBtn.classList.toggle("off", !sound.settings.music);
-    musicBtn.setAttribute("aria-pressed", String(sound.settings.music));
-    sfxBtn.classList.toggle("off", !sound.settings.sfx);
-    sfxBtn.setAttribute("aria-pressed", String(sound.settings.sfx));
-  }
-  musicBtn.addEventListener("click", () => {
-    sound.toggleMusic();
-    renderToggles();
-  });
-  sfxBtn.addEventListener("click", () => {
-    sound.toggleSfx();
-    renderToggles();
-  });
-  renderToggles();
+  const unbindAudio = bindAudioToggles(root, sound);
+  root.querySelector(".back")!.addEventListener("click", nav.onBack);
+  winEl.querySelector(".all")!.addEventListener("click", nav.onBack);
+  if (nav.onNext) winEl.querySelector(".next")!.addEventListener("click", nav.onNext);
 
   function start(): void {
     game = newGame(puzzle);
@@ -347,6 +352,12 @@ export function mountGame(root: HTMLElement, puzzle: Puzzle, sound: SoundBoard):
   }
 
   winEl.querySelector(".again")!.addEventListener("click", start);
-  setInterval(renderTime, 250);
+  const clock = window.setInterval(renderTime, 250);
   start();
+
+  return () => {
+    window.clearInterval(clock);
+    window.removeEventListener("pointerup", endDrag);
+    unbindAudio();
+  };
 }

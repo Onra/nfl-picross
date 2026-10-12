@@ -1,0 +1,21 @@
+{
+  "id": "pro-08",
+  "title": "Referee",
+  "palette": {
+    "K": "#222222",
+    "S": "#e0b089",
+    "W": "#ffffff"
+  },
+  "grid": [
+    "........SS",
+    "...KKK..KW",
+    "..KKKK..KW",
+    "...SS..KW.",
+    "..WKWKWKW.",
+    ".WKWKWK...",
+    "S.WKWKW...",
+    "..KKKKK...",
+    "..KK.KK...",
+    "..KK..KK.."
+  ]
+}

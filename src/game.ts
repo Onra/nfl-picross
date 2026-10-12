@@ -21,10 +21,19 @@ export type ActionResult =
   | { kind: "error"; penaltyMinutes: number }
   | { kind: "solved" };
 
+/** A row or column whose clue is 0 starts fully crossed: there is nothing to find there. */
+function isBlankLine(clues: number[]): boolean {
+  return clues[0] === 0;
+}
+
 export function newGame(puzzle: Puzzle): Game {
   return {
     puzzle,
-    cells: puzzle.solution.map((row) => row.map((): CellState => "empty")),
+    cells: puzzle.solution.map((row, r) =>
+      row.map((_, c): CellState =>
+        isBlankLine(puzzle.rowClues[r]) || isBlankLine(puzzle.colClues[c]) ? "crossed" : "empty",
+      ),
+    ),
     errors: 0,
     penaltyMinutes: 0,
     solved: false,

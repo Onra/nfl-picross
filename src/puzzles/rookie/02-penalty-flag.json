@@ -1,0 +1,15 @@
+{
+  "id": "rookie-02",
+  "title": "Penalty Flag",
+  "palette": {
+    "P": "#7a4a1d",
+    "Y": "#ffcb3d"
+  },
+  "grid": [
+    "PYY..",
+    "PYYYY",
+    "PYY..",
+    "P....",
+    "P...."
+  ]
+}

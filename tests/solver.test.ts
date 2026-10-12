@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parsePuzzle, type PuzzleData } from "../src/puzzle";
-import { solveByLogic, solveLine } from "../src/solver";
+import { logicSweeps, solveByLogic, solveLine } from "../src/solver";
 
-const puzzleFiles = import.meta.glob<PuzzleData>("../src/puzzles/*.json", {
+const puzzleFiles = import.meta.glob<PuzzleData>("../src/puzzles/**/*.json", {
   eager: true,
   import: "default",
 });
@@ -33,10 +33,24 @@ describe("puzzles", () => {
   });
 
   for (const [file, data] of Object.entries(puzzleFiles)) {
+    const puzzle = parsePuzzle(data);
+
     it(`${file} has a unique solution reachable by logic alone`, () => {
-      const puzzle = parsePuzzle(data);
       const solved = solveByLogic(puzzle.rowClues, puzzle.colClues);
       expect(solved).toEqual(puzzle.solution);
     });
+
+    // Quality bars: mirror-image pictures and puzzles the clues solve at a glance are boring to play.
+    it(`${file} is not left-right symmetric`, () => {
+      const n = puzzle.size;
+      const same = puzzle.solution.flat().filter((filled, i) => filled === puzzle.solution[Math.floor(i / n)][n - 1 - (i % n)]);
+      expect(same.length / (n * n)).toBeLessThan(0.8);
+    });
+
+    if (puzzle.size >= 10) {
+      it(`${file} needs at least 3 passes of deduction`, () => {
+        expect(logicSweeps(puzzle.rowClues, puzzle.colClues)).toBeGreaterThanOrEqual(3);
+      });
+    }
   }
 });

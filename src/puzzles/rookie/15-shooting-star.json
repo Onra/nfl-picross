@@ -1,0 +1,14 @@
+{
+  "id": "rookie-15",
+  "title": "Shooting Star",
+  "palette": {
+    "L": "#f4d35e"
+  },
+  "grid": [
+    "...LL",
+    "..LLL",
+    "LLLL.",
+    ".L...",
+    "L...."
+  ]
+}

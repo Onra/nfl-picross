@@ -1,0 +1,15 @@
+{
+  "id": "rookie-04",
+  "title": "Whistle",
+  "palette": {
+    "A": "#9aa3ad",
+    "K": "#222222"
+  },
+  "grid": [
+    "K....",
+    ".KAAA",
+    "AAA.A",
+    "A.AA.",
+    ".AA.."
+  ]
+}

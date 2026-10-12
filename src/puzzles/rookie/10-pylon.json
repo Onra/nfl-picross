@@ -1,0 +1,15 @@
+{
+  "id": "rookie-10",
+  "title": "Pylon",
+  "palette": {
+    "O": "#f26b1d",
+    "W": "#ffffff"
+  },
+  "grid": [
+    ".OOO.",
+    ".OOOO",
+    "OOWO.",
+    "OOOO.",
+    "OO..."
+  ]
+}

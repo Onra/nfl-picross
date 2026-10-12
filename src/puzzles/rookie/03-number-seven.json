@@ -1,0 +1,14 @@
+{
+  "id": "rookie-03",
+  "title": "Number 7",
+  "palette": {
+    "J": "#c8102e"
+  },
+  "grid": [
+    "JJJJJ",
+    "...JJ",
+    "..JJ.",
+    ".JJ..",
+    ".JJ.."
+  ]
+}

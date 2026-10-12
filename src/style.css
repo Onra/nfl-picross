@@ -237,7 +237,140 @@ button {
   transform: rotate(-45deg);
 }
 
+/* Volume button: the icon shows 0, 1 or 2 waves, or a cross when muted. */
+.volume {
+  position: relative;
+}
+
+.volume-btn .mute,
+.volume-btn[data-level="mute"] .wave-1,
+.volume-btn[data-level="mute"] .wave-2,
+.volume-btn[data-level="low"] .wave-2 {
+  display: none;
+}
+
+.volume-btn[data-level="mute"] .mute {
+  display: inline;
+  stroke: #ff8a8a;
+}
+
+.volume-btn[aria-expanded="true"] {
+  background: var(--gold);
+}
+
+.volume-btn[aria-expanded="true"] svg {
+  stroke: var(--navy);
+}
+
+.volume-btn[aria-expanded="true"][data-level="mute"] .mute {
+  stroke: var(--red);
+}
+
+.volume-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: -6px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 3px solid #0b1528;
+  border-radius: 16px;
+  background: var(--navy-light);
+  box-shadow: 0 5px 0 #0b1528, 0 14px 30px rgba(0, 0, 0, 0.4);
+  animation: pop-in 0.15s ease-out;
+}
+
+.volume-pop[hidden] {
+  display: none;
+}
+
+/* Little arrow pointing at the button. */
+.volume-pop::before {
+  content: "";
+  position: absolute;
+  top: -9px;
+  right: 18px;
+  width: 14px;
+  height: 14px;
+  border-top: 3px solid #0b1528;
+  border-left: 3px solid #0b1528;
+  background: var(--navy-light);
+  transform: rotate(45deg);
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+  to { opacity: 1; transform: none; }
+}
+
+.volume-value {
+  min-width: 2.2em;
+  font-family: "Bungee", "Fredoka", sans-serif;
+  font-size: 0.95rem;
+  color: var(--gold);
+  text-align: right;
+}
+
+.volume-pop input[type="range"] {
+  --percent: 70%;
+  width: 150px;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.volume-pop input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold) var(--percent), #0b1528 var(--percent));
+}
+
+.volume-pop input[type="range"]::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold) var(--percent), #0b1528 var(--percent));
+}
+
+.volume-pop input[type="range"]::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  margin-top: -6px;
+  border: 3px solid var(--navy);
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 0 #0b1528;
+  -webkit-appearance: none;
+}
+
+.volume-pop input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--navy);
+  border-radius: 50%;
+  background: #fff;
+}
+
+.volume-pop input[type="range"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+
 /* ---- Card and board --------------------------------------------------- */
+
+.puzzle-label {
+  margin: -4px 0 -6px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9a917b;
+}
 
 .card {
   display: flex;
@@ -253,15 +386,31 @@ button {
     0 26px 50px rgba(0, 0, 0, 0.35);
 }
 
+/* Registered so the gap between 5-cell groups can animate closed on win. */
+@property --major-gap {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 6px;
+}
+
+/* Tracks are set inline: every 5th one is wider by --major-gap, which its cells use as margin. */
 .board {
+  --major-track: calc(var(--cell) + var(--major-gap));
   display: grid;
-  grid-template-columns: auto repeat(var(--size), var(--cell));
-  grid-template-rows: auto repeat(var(--size), var(--cell));
   gap: var(--gap);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;
-  transition: gap 0.6s ease 0.2s;
+  transition: gap 0.6s ease 0.2s, --major-gap 0.6s ease 0.2s;
+}
+
+/* Small grids get bigger cells. */
+.board.size-5 {
+  --cell: clamp(44px, 13vw, 66px);
+}
+
+.board.size-15 {
+  --cell: clamp(15px, calc((100vw - 140px) / 16.5), 34px);
 }
 
 .major-left {
@@ -429,12 +578,7 @@ button {
 
 .board.revealed {
   --gap: 0px;
-}
-
-.board.revealed .major-left,
-.board.revealed .major-top {
-  margin: 0;
-  transition: margin 0.6s ease 0.2s;
+  --major-gap: 0px;
 }
 
 .board.revealed .clue {
@@ -498,31 +642,179 @@ button {
   font-weight: 500;
 }
 
-.again {
+.win-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
   margin-top: 12px;
-  padding: 11px 28px;
+}
+
+.btn {
+  padding: 10px 22px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffd85e, var(--gold));
+  background: var(--strip);
   color: var(--navy);
   font-weight: 700;
-  font-size: 1.05rem;
-  box-shadow: 0 5px 0 var(--gold-dark), 0 8px 16px rgba(0, 0, 0, 0.2);
-  transition: transform 0.08s, box-shadow 0.08s;
+  font-size: 1rem;
+  box-shadow: 0 4px 0 var(--card-base);
+  transition: transform 0.08s, box-shadow 0.08s, filter 0.1s;
 }
 
-.again:hover {
-  filter: brightness(1.05);
+.btn:hover {
+  filter: brightness(1.04);
 }
 
-.again:active {
-  transform: translateY(4px);
+.btn:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--card-base);
+}
+
+.btn.primary {
+  background: linear-gradient(180deg, #ffd85e, var(--gold));
+  box-shadow: 0 4px 0 var(--gold-dark), 0 8px 16px rgba(0, 0, 0, 0.18);
+}
+
+.btn.primary:active {
   box-shadow: 0 1px 0 var(--gold-dark);
+}
+
+.btn.ghost {
+  background: transparent;
+  box-shadow: none;
+  color: #7d7462;
 }
 
 @keyframes appear {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
+}
+
+/* ---- Home ------------------------------------------------------------- */
+
+.toggle.back svg {
+  stroke-width: 2.6;
+}
+
+.card.home {
+  align-items: stretch;
+  gap: 30px;
+  width: min(100%, 780px);
+  padding: 24px;
+}
+
+.pack-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pack-header h2 {
+  margin: 0;
+  font-family: "Bungee", "Fredoka", sans-serif;
+  font-weight: 400;
+  font-size: 1.5rem;
+  color: var(--navy);
+}
+
+.pack-header p {
+  margin: 0;
+  color: #8d846f;
+  font-weight: 500;
+}
+
+.pack-count {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--gold);
+  font-family: "Bungee", "Fredoka", sans-serif;
+  font-size: 0.95rem;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
+  gap: 14px;
+}
+
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  aspect-ratio: 1;
+  padding: 10px;
+  border-radius: 18px;
+  background: var(--tile);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 5px 0 var(--card-base);
+  color: var(--navy);
+  text-decoration: none;
+  transition: transform 0.12s, box-shadow 0.12s, background-color 0.12s;
+}
+
+.tile:hover {
+  transform: translateY(-3px);
+  background: var(--tile-hl);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    0 8px 0 var(--card-base);
+}
+
+.tile:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 var(--card-base);
+}
+
+.tile-number {
+  font-family: "Bungee", "Fredoka", sans-serif;
+  font-size: 2.2rem;
+  line-height: 1;
+  color: var(--fill);
+}
+
+.tile-size {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #a39a83;
+}
+
+.tile.solved {
+  justify-content: flex-start;
+  gap: 2px;
+  padding-top: 12px;
+}
+
+.thumb {
+  display: grid;
+  grid-template-columns: repeat(var(--size), 1fr);
+  width: 54%;
+  aspect-ratio: 1;
+  margin-bottom: 4px;
+}
+
+.tile-title {
+  max-width: 100%;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 0.82rem;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-best {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a39a83;
 }
 
 /* ---- Help ------------------------------------------------------------- */
@@ -557,5 +849,26 @@ button {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Phones: tighter spacing so 15×15 fits without horizontal scroll. */
+@media (max-width: 520px) {
+  .card {
+    padding: 14px 12px 16px 8px;
+  }
+
+  .board {
+    --gap: 2px;
+    --major-gap: 4px;
+  }
+
+  .clue {
+    font-size: max(10px, calc(var(--cell) * 0.46));
+  }
+
+  .row-clue {
+    padding: 0 5px 0 6px;
+    gap: 4px;
   }
 }

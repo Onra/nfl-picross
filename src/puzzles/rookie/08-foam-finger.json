@@ -1,0 +1,14 @@
+{
+  "id": "rookie-08",
+  "title": "Foam Finger",
+  "palette": {
+    "F": "#2f6fdc"
+  },
+  "grid": [
+    "...F.",
+    "...F.",
+    ".FFF.",
+    "FFFF.",
+    ".FFF."
+  ]
+}

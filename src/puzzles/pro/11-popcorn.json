@@ -1,0 +1,21 @@
+{
+  "id": "pro-11",
+  "title": "Popcorn Spill",
+  "palette": {
+    "C": "#c8102e",
+    "L": "#f4d35e",
+    "W": "#ffffff"
+  },
+  "grid": [
+    "...L......",
+    ".....L....",
+    "..LLL.....",
+    "..LLLL....",
+    "..CWCWC...",
+    "...CWCWC..",
+    "...CWCWCW.",
+    "....CWCWC.",
+    "....CWCW..",
+    "......LL.L"
+  ]
+}

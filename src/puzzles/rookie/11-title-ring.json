@@ -1,0 +1,15 @@
+{
+  "id": "rookie-11",
+  "title": "Title Ring",
+  "palette": {
+    "D": "#5fc8f0",
+    "G": "#e3a91b"
+  },
+  "grid": [
+    ".....",
+    ".GGDD",
+    "G..G.",
+    "G..G.",
+    ".GG.."
+  ]
+}

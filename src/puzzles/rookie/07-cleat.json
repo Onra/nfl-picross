@@ -1,0 +1,15 @@
+{
+  "id": "rookie-07",
+  "title": "Cleat",
+  "palette": {
+    "A": "#9aa3ad",
+    "K": "#222222"
+  },
+  "grid": [
+    "KK...",
+    "KKK..",
+    "K.KKK",
+    "KKKKK",
+    ".A..A"
+  ]
+}

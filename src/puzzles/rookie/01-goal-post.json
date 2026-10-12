@@ -1,0 +1,15 @@
+{
+  "id": "rookie-01",
+  "title": "Goal Post",
+  "palette": {
+    "B": "#8b4a1f",
+    "Y": "#ffcb3d"
+  },
+  "grid": [
+    "Y.Y.B",
+    "Y.Y..",
+    "YYY..",
+    ".Y...",
+    ".Y..."
+  ]
+}

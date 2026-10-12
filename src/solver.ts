@@ -58,10 +58,23 @@ export function solveLine(clues: number[], known: Knowledge[]): Knowledge[] | nu
  * Returns the deduced grid; any null cell means logic alone cannot finish it.
  */
 export function solveByLogic(rowClues: number[][], colClues: number[][]): Knowledge[][] {
+  return runLogic(rowClues, colClues).grid;
+}
+
+/**
+ * Number of passes over all rows then all columns that line logic needs to make
+ * progress. A rough difficulty measure: 1-2 means the clues alone give the picture away.
+ */
+export function logicSweeps(rowClues: number[][], colClues: number[][]): number {
+  return runLogic(rowClues, colClues).sweeps;
+}
+
+function runLogic(rowClues: number[][], colClues: number[][]): { grid: Knowledge[][]; sweeps: number } {
   const rows = rowClues.length;
   const cols = colClues.length;
   const grid: Knowledge[][] = Array.from({ length: rows }, () => new Array(cols).fill(null));
 
+  let sweeps = 0;
   let changed = true;
   while (changed) {
     changed = false;
@@ -85,6 +98,7 @@ export function solveByLogic(rowClues: number[][], colClues: number[][]): Knowle
         }
       });
     }
+    if (changed) sweeps++;
   }
-  return grid;
+  return { grid, sweeps };
 }

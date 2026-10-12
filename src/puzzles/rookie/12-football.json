@@ -1,0 +1,15 @@
+{
+  "id": "rookie-12",
+  "title": "Football",
+  "palette": {
+    "B": "#8b4a1f",
+    "W": "#ffffff"
+  },
+  "grid": [
+    "...BB",
+    ".BBWB",
+    ".BWB.",
+    "BWB..",
+    "BB..."
+  ]
+}

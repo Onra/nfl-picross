@@ -61,6 +61,22 @@ describe("applyAction", () => {
   });
 });
 
+describe("newGame", () => {
+  it("pre-crosses every row and column whose clue is 0", () => {
+    // Row 1 and column 2 are blank.
+    const game = newGame(parsePuzzle({ id: "z", title: "Z", palette: { A: "#000" }, grid: ["AA.", "...", "A.."] }));
+    expect(game.cells).toEqual([
+      ["empty", "empty", "crossed"],
+      ["crossed", "crossed", "crossed"],
+      ["empty", "empty", "crossed"],
+    ]);
+  });
+
+  it("leaves a grid without blank lines empty", () => {
+    expect(newGame(puzzle).cells.flat().every((cell) => cell === "empty")).toBe(true);
+  });
+});
+
 describe("penaltyForError", () => {
   it("doubles up to 8 minutes", () => {
     expect([1, 2, 3, 4, 5, 6].map(penaltyForError)).toEqual([1, 2, 4, 8, 8, 8]);

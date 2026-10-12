@@ -1,0 +1,15 @@
+{
+  "id": "rookie-13",
+  "title": "Hot Dog",
+  "palette": {
+    "T": "#b23a1e",
+    "U": "#e8c27a"
+  },
+  "grid": [
+    "...UT",
+    ".UUTU",
+    ".UTU.",
+    "UTU..",
+    "TU..."
+  ]
+}

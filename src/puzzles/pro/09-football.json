@@ -1,0 +1,19 @@
+{
+  "id": "pro-09",
+  "title": "Football",
+  "palette": {
+    "B": "#8b4a1f"
+  },
+  "grid": [
+    "......BBB.",
+    "....BBBBBB",
+    "...BBBB.BB",
+    "..BBB.B.BB",
+    "..BB.B.BB.",
+    ".BB.B.BBB.",
+    ".BB.BBBB..",
+    "BBBBBBB...",
+    "BBBBB.....",
+    ".BB......."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "id": "pro-02",
+  "title": "Helmet",
+  "palette": {
+    "H": "#1f3a93",
+    "M": "#b8bcc4",
+    "W": "#ffffff"
+  },
+  "grid": [
+    "....HHHH..",
+    "..HHH.HHH.",
+    ".HH.WW.HHH",
+    ".H.HH.H.HH",
+    "MMHH..HHHH",
+    "M.MH..HHH.",
+    "MMMHH.HH..",
+    "M.M.HHH...",
+    "MMM.......",
+    ".........."
+  ]
+}

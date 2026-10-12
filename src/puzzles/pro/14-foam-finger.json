@@ -1,0 +1,20 @@
+{
+  "id": "pro-14",
+  "title": "Foam Finger",
+  "palette": {
+    "F": "#2f6fdc",
+    "W": "#ffffff"
+  },
+  "grid": [
+    "........FF",
+    ".......FFF",
+    "......FFF.",
+    "..F..FFF..",
+    "..FFFFFF..",
+    ".FFFFFFF..",
+    ".FF.FFF...",
+    "..FFFF....",
+    ".WWW......",
+    "WWW......."
+  ]
+}

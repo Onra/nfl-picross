@@ -1,0 +1,21 @@
+{
+  "id": "pro-01",
+  "title": "Light Tower",
+  "palette": {
+    "A": "#9aa3ad",
+    "K": "#222222",
+    "L": "#f4d35e"
+  },
+  "grid": [
+    "KKKKK.....",
+    "KLKLKLL...",
+    "KLKLK.LLL.",
+    "KKKKK..LLL",
+    "..A.....LL",
+    "..A.......",
+    "..A.......",
+    ".AAA......",
+    ".A.A......",
+    "AAAAA....."
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "id": "rookie-09",
+  "title": "Helmet",
+  "palette": {
+    "H": "#1f3a93",
+    "M": "#b8bcc4"
+  },
+  "grid": [
+    ".HHH.",
+    "HHHHH",
+    "HHHMM",
+    "HH..M",
+    "HHH.."
+  ]
+}

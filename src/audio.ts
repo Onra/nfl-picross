@@ -44,22 +44,32 @@ const SONG: Bar[] = [
 
 interface Settings {
   music: boolean;
-  sfx: boolean;
+  /** Master volume, 0 to 1. */
+  volume: number;
 }
+
+const DEFAULT_VOLUME = 0.7;
 
 function loadSettings(): Settings {
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}");
-    return { music: saved.music !== false, sfx: saved.sfx !== false };
+    const volume = typeof saved.volume === "number" ? Math.min(Math.max(saved.volume, 0), 1) : DEFAULT_VOLUME;
+    return { music: saved.music !== false, volume };
   } catch {
-    return { music: true, sfx: true };
+    return { music: true, volume: DEFAULT_VOLUME };
   }
+}
+
+/** Squared so the slider feels even to the ear; 0.8 leaves headroom at full volume. */
+function masterGain(volume: number): number {
+  return 0.8 * volume * volume;
 }
 
 export class SoundBoard {
   settings = loadSettings();
 
   private ctx: AudioContext | null = null;
+  private master!: GainNode;
   private sfxBus!: GainNode;
   private musicBus!: GainNode;
   private noise!: AudioBuffer;
@@ -75,8 +85,9 @@ export class SoundBoard {
     if (!this.ctx) {
       this.ctx = new AudioContext();
       const master = this.ctx.createGain();
-      master.gain.value = 0.8;
+      master.gain.value = masterGain(this.settings.volume);
       master.connect(this.ctx.destination);
+      this.master = master;
       this.sfxBus = this.ctx.createGain();
       this.sfxBus.connect(master);
       this.musicBus = this.ctx.createGain();
@@ -97,10 +108,14 @@ export class SoundBoard {
     return this.settings.music;
   }
 
-  toggleSfx(): boolean {
-    this.settings.sfx = !this.settings.sfx;
+  /** Sets the master volume (0 to 1) for music and effects alike. */
+  setVolume(volume: number): void {
+    this.settings.volume = Math.min(Math.max(volume, 0), 1);
     this.save();
-    return this.settings.sfx;
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this.master.gain.cancelScheduledValues(t);
+    this.master.gain.setTargetAtTime(masterGain(this.settings.volume), t, 0.02);
   }
 
   // ---- Sound effects ------------------------------------------------------
@@ -245,7 +260,7 @@ export class SoundBoard {
 
   /** Returns the context if sound effects may play right now. */
   private sfx(): AudioContext | null {
-    return this.settings.sfx && this.ctx ? this.ctx : null;
+    return this.settings.volume > 0 && this.ctx ? this.ctx : null;
   }
 
   /** Connects `node` to `out` through an attack/decay envelope, then starts `source`. */

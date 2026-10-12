@@ -1,0 +1,25 @@
+{
+  "id": "hof-01",
+  "title": "Game Helmet",
+  "palette": {
+    "H": "#1f3a93",
+    "M": "#b8bcc4"
+  },
+  "grid": [
+    "....HHHHHH.....",
+    "..HHH.H..HHH...",
+    ".HHH.H.HH..HHH.",
+    ".HH.HHHHHH..HH.",
+    "MMHHHHH.HHH.HHH",
+    "M.MHHH..H.HHHHH",
+    "MM.MHH...HHHH..",
+    "M.M.MHH.HHHHH..",
+    "MM.M.MHHHHHH...",
+    "M.M.M..HHH.....",
+    "MM.M...........",
+    ".MMM...........",
+    "...............",
+    "...............",
+    "..............."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "rookie-14",
+  "title": "Slant Route",
+  "palette": {
+    "R": "#1d1d1f"
+  },
+  "grid": [
+    "R....",
+    "R....",
+    "RR...",
+    ".RR.R",
+    "..RRR"
+  ]
+}

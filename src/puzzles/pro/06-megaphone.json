@@ -1,0 +1,20 @@
+{
+  "id": "pro-06",
+  "title": "Megaphone",
+  "palette": {
+    "A": "#9aa3ad",
+    "R": "#c8102e"
+  },
+  "grid": [
+    "......R.AA",
+    "....RRR.A.",
+    "..RRRRR.A.",
+    "AAR.RRR..A",
+    "AARR.RR.A.",
+    "AAR.RRR..A",
+    "..RRRRR.A.",
+    "....RRR.A.",
+    "...A..R..A",
+    "..AAA....."
+  ]
+}

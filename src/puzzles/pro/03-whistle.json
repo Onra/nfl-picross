@@ -1,0 +1,20 @@
+{
+  "id": "pro-03",
+  "title": "Whistle",
+  "palette": {
+    "A": "#9aa3ad",
+    "K": "#222222"
+  },
+  "grid": [
+    "KK........",
+    ".KK.......",
+    "..KK......",
+    "..AAAAAAAA",
+    ".AAAA.AA.A",
+    "AA..AAAAAA",
+    "A....A....",
+    "AA..AA.A..",
+    ".AAAA..A..",
+    ".........."
+  ]
+}

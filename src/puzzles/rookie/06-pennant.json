@@ -1,0 +1,15 @@
+{
+  "id": "rookie-06",
+  "title": "Pennant",
+  "palette": {
+    "C": "#c8102e",
+    "K": "#222222"
+  },
+  "grid": [
+    "K....",
+    "KCC..",
+    "KCCCC",
+    "KCC..",
+    "K...."
+  ]
+}

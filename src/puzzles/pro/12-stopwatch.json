@@ -1,0 +1,21 @@
+{
+  "id": "pro-12",
+  "title": "Stopwatch",
+  "palette": {
+    "A": "#9aa3ad",
+    "K": "#222222",
+    "R": "#c8102e"
+  },
+  "grid": [
+    "..AA......",
+    "...AKKKK..",
+    "..KKKKKKK.",
+    ".KK..R..KK",
+    ".K...R...K",
+    "KK...RRR.K",
+    "K.......KK",
+    "KK.....KK.",
+    ".KKKKKKK..",
+    "...KKK...."
+  ]
+}
