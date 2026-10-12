@@ -2,6 +2,8 @@
 
 A football-themed picross (nonogram) game that runs in the browser. Fill in the grid using the number clues and uncover a pixel-art picture: helmets, goal posts, touchdown dives, victory splashes and more.
 
+**[▶ Play it on GitHub Pages](https://onra.github.io/nfl-picross/)**
+
 <p align="center">
   <img src="docs/screenshots/gameplay.png" alt="A 10x10 puzzle in progress, with the hovered row and column highlighted, a red error cross and a +1:00 penalty" width="640">
 </p>
