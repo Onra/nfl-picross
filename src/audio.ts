@@ -60,6 +60,36 @@ function loadSettings(): Settings {
   }
 }
 
+/** Safari 17+ Audio Session API (not in TypeScript's DOM types yet). */
+type NavigatorWithAudioSession = Navigator & { audioSession?: { type: string } };
+
+function isIOS(): boolean {
+  // iPadOS reports itself as a Mac, but Macs have no touch screen.
+  return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+/** A tenth of a second of silence as a WAV file. */
+function silentWavUrl(): string {
+  const sampleRate = 8000;
+  const samples = 800;
+  const view = new DataView(new ArrayBuffer(44 + samples * 2));
+  const text = (offset: number, value: string) => [...value].forEach((ch, i) => view.setUint8(offset + i, ch.charCodeAt(0)));
+  text(0, "RIFF");
+  view.setUint32(4, 36 + samples * 2, true);
+  text(8, "WAVE");
+  text(12, "fmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, 1, true); // mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  text(36, "data");
+  view.setUint32(40, samples * 2, true);
+  return URL.createObjectURL(new Blob([view.buffer], { type: "audio/wav" }));
+}
+
 /** Squared so the slider feels even to the ear; 0.8 leaves headroom at full volume. */
 function masterGain(volume: number): number {
   return 0.8 * volume * volume;
@@ -76,13 +106,20 @@ export class SoundBoard {
   /** 25% duty pulse wave, the classic 8-bit lead timbre. */
   private pulse!: PeriodicWave;
 
+  /** iOS < 17 only: a looping silent <audio> that keeps Web Audio audible with the silent switch on. */
+  private keepAlive: HTMLAudioElement | null = null;
+
   private musicTimer: number | null = null;
   private nextStepTime = 0;
   private step = 0;
 
-  /** Call from a user gesture. Safe to call repeatedly. */
+  /**
+   * Call from a user gesture (iOS only accepts some, like touchend and click).
+   * Safe to call repeatedly: it also revives audio that iOS suspended or interrupted.
+   */
   unlock(): void {
     if (!this.ctx) {
+      this.playThroughSilentSwitch();
       this.ctx = new AudioContext();
       const master = this.ctx.createGain();
       master.gain.value = masterGain(this.settings.volume);
@@ -96,8 +133,39 @@ export class SoundBoard {
       this.noise = this.makeNoise();
       this.pulse = this.makePulse(0.25);
       if (this.settings.music) this.startMusic();
+      document.addEventListener("visibilitychange", () => this.onVisibilityChange());
     }
-    if (this.ctx.state === "suspended") void this.ctx.resume();
+    // iOS uses "interrupted" (calls, other apps) as well as "suspended".
+    if (this.ctx.state !== "running") void this.ctx.resume();
+    if (this.keepAlive?.paused) void this.keepAlive.play().catch(() => {});
+  }
+
+  /**
+   * iOS mutes Web Audio when the ring/silent switch is set to silent. Declaring the
+   * page as a media player lifts that, like a music or game app.
+   */
+  private playThroughSilentSwitch(): void {
+    const session = (navigator as NavigatorWithAudioSession).audioSession;
+    if (session) {
+      session.type = "playback";
+    } else if (isIOS()) {
+      // Older iOS: playing an <audio> element switches the page to the playback category.
+      this.keepAlive = new Audio(silentWavUrl());
+      this.keepAlive.loop = true;
+      this.keepAlive.setAttribute("playsinline", "");
+    }
+  }
+
+  /** Silence everything in the background; the next tap revives audio if the browser needs a gesture. */
+  private onVisibilityChange(): void {
+    if (!this.ctx) return;
+    if (document.hidden) {
+      void this.ctx.suspend();
+      this.keepAlive?.pause();
+    } else {
+      void this.ctx.resume();
+      if (this.keepAlive?.paused) void this.keepAlive.play().catch(() => {});
+    }
   }
 
   toggleMusic(): boolean {
@@ -215,6 +283,8 @@ export class SoundBoard {
   private scheduleMusic(): void {
     const ctx = this.ctx!;
     const stepDuration = 60 / BPM / 4;
+    // After a pause (background tab, iOS interruption) skip ahead instead of firing every missed note at once.
+    if (this.nextStepTime < ctx.currentTime) this.nextStepTime = ctx.currentTime + 0.05;
     while (this.nextStepTime < ctx.currentTime + 0.12) {
       this.playStep(this.step, this.nextStepTime, stepDuration);
       this.nextStepTime += stepDuration;

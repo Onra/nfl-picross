@@ -8,16 +8,26 @@ A football-themed picross (nonogram) game that runs in the browser. Fill in the 
   <img src="docs/screenshots/gameplay.png" alt="A 10x10 puzzle in progress, with the hovered row and column highlighted, a red error cross and a +1:00 penalty" width="640">
 </p>
 
+## Install it as an app
+
+NFL Picross is a progressive web app: add it to your home screen and it opens full screen, like a native app, and works offline.
+
+- **iPhone / iPad:** open the game in Safari, tap **Share**, then **Add to Home Screen**.
+- **Android:** open it in Chrome and tap **Install app** (or **Add to Home screen**) in the menu.
+- **Desktop Chrome / Edge:** click the install icon in the address bar.
+
+On iPhone, sound plays even with the silent switch on, like a game app. Use the speaker button to lower or mute it.
+
 ## How to play
 
 Each number tells you the length of a run of filled cells in that row or column, in order, with at least one empty cell between runs. Use logic to work out which cells are filled. Every puzzle has a single solution you can reach without guessing.
 
-| Action | Control |
-| --- | --- |
-| Fill a cell | Left click |
-| Mark a cell as empty | Right click |
-| Paint a whole line | Hold and drag |
-| Erase a cross | Click it again |
+| Action | Mouse | Touch screen |
+| --- | --- | --- |
+| Fill a cell | Left click | Tap (Fill mode) |
+| Mark a cell as empty | Right click | Tap (Cross mode) |
+| Paint a whole line | Hold and drag | Slide your finger |
+| Erase a cross | Click it again | Tap it again |
 
 The rules follow the Nintendo picross style:
 
