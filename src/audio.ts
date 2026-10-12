@@ -10,25 +10,36 @@ const midiToHz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 /** C major pentatonic, used to make drag-painting climb in pitch. */
 const PENTATONIC = [0, 2, 4, 7, 9];
 
-// Background loop: 8 bars of eighth notes over Cmaj7 – Am7 – Fmaj7 – G6.
-const BPM = 92;
-const STEPS_PER_BAR = 8;
-const CHORDS = [
-  { bass: 36, notes: [60, 64, 67, 71] },
-  { bass: 33, notes: [57, 60, 64, 67] },
-  { bass: 29, notes: [53, 57, 60, 64] },
-  { bass: 31, notes: [55, 59, 62, 64] },
-];
-const _ = null;
-const MELODY: (number | null)[][] = [
-  [76, _, 79, _, 81, 79, 76, _],
-  [72, _, 76, _, 74, 72, 69, _],
-  [69, 72, _, 74, 76, _, 72, _],
-  [74, _, 71, _, 74, 76, 79, _],
-  [84, _, 81, 79, _, 76, 79, _],
-  [81, _, 79, 76, _, 74, 76, _],
-  [77, _, 76, 74, _, 72, 74, _],
-  [71, _, 74, _, 79, _, _, _],
+// Background loop: an 8-bar stadium fight song in D major, chiptune style, in sixteenth notes.
+const BPM = 132;
+const STEPS_PER_BAR = 16;
+const MUSIC_VOLUME = 0.3;
+
+interface Bar {
+  /** Bass root (MIDI). */
+  root: number;
+  /** Brass stab voicing (MIDI). */
+  stab: number[];
+  /** Lead notes as [midi, start step, length in steps]. */
+  lead: [number, number, number][];
+  /** Ends with a marching snare roll into the next phrase. */
+  roll?: boolean;
+}
+
+const D = { root: 38, stab: [62, 66, 69, 74] };
+const G = { root: 43, stab: [62, 67, 71, 74] };
+const A = { root: 33, stab: [61, 64, 69, 73] };
+const Bm = { root: 35, stab: [62, 66, 71, 74] };
+
+const SONG: Bar[] = [
+  { ...D, lead: [[74, 0, 3], [69, 3, 1], [74, 4, 2], [78, 6, 2], [81, 8, 6], [78, 14, 2]] },
+  { ...G, lead: [[79, 0, 3], [78, 3, 1], [76, 4, 2], [74, 6, 2], [71, 8, 4], [74, 12, 4]] },
+  { ...A, lead: [[76, 0, 2], [76, 2, 2], [78, 4, 2], [79, 6, 2], [81, 8, 4], [76, 12, 4]] },
+  { ...D, lead: [[78, 0, 4], [74, 4, 4], [69, 8, 2], [74, 10, 2]], roll: true },
+  { ...Bm, lead: [[71, 0, 3], [74, 3, 1], [78, 4, 4], [83, 8, 4], [81, 12, 4]] },
+  { ...G, lead: [[79, 0, 3], [81, 3, 1], [83, 4, 4], [79, 8, 4], [74, 12, 4]] },
+  { ...A, lead: [[76, 0, 2], [78, 2, 2], [79, 4, 2], [81, 6, 2], [83, 8, 2], [85, 10, 2], [86, 12, 4]] },
+  { ...A, lead: [[88, 0, 6], [85, 6, 2], [81, 8, 2], [76, 10, 2]], roll: true },
 ];
 
 interface Settings {
@@ -52,6 +63,8 @@ export class SoundBoard {
   private sfxBus!: GainNode;
   private musicBus!: GainNode;
   private noise!: AudioBuffer;
+  /** 25% duty pulse wave, the classic 8-bit lead timbre. */
+  private pulse!: PeriodicWave;
 
   private musicTimer: number | null = null;
   private nextStepTime = 0;
@@ -67,9 +80,10 @@ export class SoundBoard {
       this.sfxBus = this.ctx.createGain();
       this.sfxBus.connect(master);
       this.musicBus = this.ctx.createGain();
-      this.musicBus.gain.value = 0.32;
+      this.musicBus.gain.value = MUSIC_VOLUME;
       this.musicBus.connect(master);
       this.noise = this.makeNoise();
+      this.pulse = this.makePulse(0.25);
       if (this.settings.music) this.startMusic();
     }
     if (this.ctx.state === "suspended") void this.ctx.resume();
@@ -156,7 +170,7 @@ export class SoundBoard {
   private startMusic(): void {
     if (!this.ctx || this.musicTimer !== null) return;
     this.musicBus.gain.cancelScheduledValues(this.ctx.currentTime);
-    this.musicBus.gain.setValueAtTime(0.32, this.ctx.currentTime);
+    this.musicBus.gain.setValueAtTime(MUSIC_VOLUME, this.ctx.currentTime);
     this.nextStepTime = this.ctx.currentTime + 0.1;
     this.step = 0;
     // Lookahead scheduler: timers are imprecise, so notes are scheduled slightly ahead.
@@ -177,44 +191,54 @@ export class SoundBoard {
     if (!this.ctx || this.musicTimer === null) return;
     const gain = this.musicBus.gain;
     gain.cancelScheduledValues(t);
-    gain.setValueAtTime(0.32, t);
-    gain.linearRampToValueAtTime(0.06, t + 0.15);
-    gain.setValueAtTime(0.06, t + seconds);
-    gain.linearRampToValueAtTime(0.32, t + seconds + 1.5);
+    gain.setValueAtTime(MUSIC_VOLUME, t);
+    gain.linearRampToValueAtTime(MUSIC_VOLUME * 0.2, t + 0.15);
+    gain.setValueAtTime(MUSIC_VOLUME * 0.2, t + seconds);
+    gain.linearRampToValueAtTime(MUSIC_VOLUME, t + seconds + 1.5);
   }
 
   private scheduleMusic(): void {
     const ctx = this.ctx!;
-    const stepDuration = 60 / BPM / 2;
+    const stepDuration = 60 / BPM / 4;
     while (this.nextStepTime < ctx.currentTime + 0.12) {
       this.playStep(this.step, this.nextStepTime, stepDuration);
       this.nextStepTime += stepDuration;
-      this.step = (this.step + 1) % (MELODY.length * STEPS_PER_BAR);
+      this.step = (this.step + 1) % (SONG.length * STEPS_PER_BAR);
     }
   }
 
   private playStep(step: number, t: number, dur: number): void {
-    const bar = Math.floor(step / STEPS_PER_BAR);
-    const beat = step % STEPS_PER_BAR;
-    const chord = CHORDS[bar % CHORDS.length];
+    const barIndex = Math.floor(step / STEPS_PER_BAR);
+    const bar = SONG[barIndex];
+    const pos = step % STEPS_PER_BAR;
     const out = this.musicBus;
 
-    // Bass on beats 1 and 3, with a pickup on the last eighth.
-    if (beat === 0 || beat === 4) this.tone(t, midiToHz(chord.bass + 12), "triangle", 0.5, dur * 3, out);
-    if (beat === 7) this.tone(t, midiToHz(chord.bass + 19), "triangle", 0.3, dur, out);
-
-    // Soft keys on the off-beats.
-    if (beat === 2 || beat === 6) {
-      chord.notes.forEach((midi) => this.tone(t, midiToHz(midi), "sine", 0.07, dur * 1.6, out, 1800));
+    // Bass bouncing between root and octave on every eighth.
+    if (pos % 2 === 0) {
+      const midi = bar.root + (pos % 4 === 0 ? 0 : 12);
+      this.gated(t, midiToHz(midi), "triangle", 0.55, dur * 1.7, out);
     }
 
-    // Light percussion: kick on 1 and 3, snap on 2 and 4, hats on every eighth.
-    if (beat === 0 || beat === 4) this.kick(t, out);
-    if (beat === 2 || beat === 6) this.noiseHit(t, 1800, 0.06, 0.08, out);
-    this.noiseHit(t, 8000, 0.02, beat % 2 === 0 ? 0.035 : 0.02, out);
+    // Brass stabs on the fight-song accents: 1, the "and" of 2, and 3.
+    if (pos === 0 || pos === 6 || pos === 8) {
+      bar.stab.forEach((midi) => this.tone(t, midiToHz(midi), "sawtooth", 0.05, dur * 2.2, out, 2600));
+    }
 
-    const note = MELODY[bar][beat];
-    if (note !== null) this.bell(t, midiToHz(note), 0.11, dur * 1.8, out);
+    // Lead: pulse wave with a quiet octave echo for that arcade shimmer.
+    for (const [midi, start, length] of bar.lead) {
+      if (start !== pos) continue;
+      this.gated(t, midiToHz(midi), this.pulse, 0.11, dur * length * 0.92, out);
+      this.gated(t + dur * 0.75, midiToHz(midi + 12), this.pulse, 0.025, dur * length * 0.6, out);
+    }
+
+    // Drumline: kick on 1, 3 and the "and" of 3; snare on 2 and 4; sixteenth hats.
+    if (pos === 0 || pos === 8 || pos === 10) this.kick(t, out);
+    if (pos === 4 || pos === 12) this.snare(t, 0.22, out);
+    this.noiseHit(t, 9000, 0.025, pos % 4 === 2 ? 0.05 : 0.025, out);
+    if (bar.roll && pos >= 12) this.snare(t, 0.08 + (pos - 12) * 0.04, out);
+
+    // Crowd "HEY!" at the end of each 4-bar phrase.
+    if (bar.roll && pos === 14) this.hey(t, out);
   }
 
   // ---- Instruments --------------------------------------------------------
@@ -266,6 +290,53 @@ export class SoundBoard {
     }
   }
 
+  /** Held note: quick attack, sustain, short release. Used for chiptune bass and lead. */
+  private gated(
+    t: number,
+    freq: number,
+    wave: OscillatorType | PeriodicWave,
+    peak: number,
+    length: number,
+    out: AudioNode,
+  ): void {
+    const ctx = this.ctx!;
+    const osc = ctx.createOscillator();
+    if (wave instanceof PeriodicWave) osc.setPeriodicWave(wave);
+    else osc.type = wave;
+    osc.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(peak, t + 0.004);
+    gain.gain.setValueAtTime(peak * 0.8, t + 0.03);
+    gain.gain.setValueAtTime(peak * 0.8, t + length);
+    gain.gain.linearRampToValueAtTime(0, t + length + 0.03);
+    osc.connect(gain).connect(out);
+    osc.start(t);
+    osc.stop(t + length + 0.05);
+  }
+
+  /** Marching snare: a noise crack over a short tonal body. */
+  private snare(t: number, peak: number, out: AudioNode): void {
+    this.noiseHit(t, 2200, 0.09, peak, out);
+    this.tone(t, 190, "triangle", peak * 0.6, 0.06, out);
+  }
+
+  /** A crowd shout, faked with stacked band-passed noise and a falling vowel-ish tone. */
+  private hey(t: number, out: AudioNode): void {
+    [700, 1150, 2400].forEach((freq) => this.noiseHit(t, freq, 0.22, 0.09, out));
+    const ctx = this.ctx!;
+    const osc = ctx.createOscillator();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(330, t);
+    osc.frequency.exponentialRampToValueAtTime(240, t + 0.2);
+    const filter = ctx.createBiquadFilter();
+    filter.type = "bandpass";
+    filter.frequency.value = 900;
+    filter.Q.value = 2;
+    osc.connect(filter);
+    this.envelope(filter, t, 0.06, 0.22, osc, out);
+  }
+
   /** Short, woody pluck: triangle plus a quieter octave sine. */
   private pluck(t: number, freq: number, peak: number, decay: number, out: AudioNode = this.sfxBus): void {
     this.tone(t, freq, "triangle", peak, decay, out, 3500);
@@ -295,6 +366,14 @@ export class SoundBoard {
     filter.frequency.value = freq;
     src.connect(filter);
     this.envelope(filter, t, peak, decay, src, out);
+  }
+
+  private makePulse(duty: number): PeriodicWave {
+    const harmonics = 32;
+    const real = new Float32Array(harmonics);
+    const imag = new Float32Array(harmonics);
+    for (let n = 1; n < harmonics; n++) real[n] = (2 / (n * Math.PI)) * Math.sin(n * Math.PI * duty);
+    return this.ctx!.createPeriodicWave(real, imag);
   }
 
   private makeNoise(): AudioBuffer {
