@@ -1,0 +1,248 @@
+:root {
+  --bg: #f4f1ea;
+  --surface: #ffffff;
+  --ink: #1d1d1f;
+  --muted: #8a8a8f;
+  --line: #c9c4b8;
+  --line-major: #4a4a4f;
+  --fill: #1d2a44;
+  --cross: #8a8a8f;
+  --error: #d62828;
+  --accent: #c8102e;
+  --cell: min(8.5vw, 40px);
+  color-scheme: light dark;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171c;
+    --surface: #20232a;
+    --ink: #ecebe6;
+    --muted: #7d8089;
+    --line: #3a3e47;
+    --line-major: #9a9ea8;
+    --fill: #e6e2d6;
+    --cross: #7d8089;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 24px 16px;
+}
+
+.hud {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stats {
+  display: flex;
+  gap: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.time {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.errors {
+  align-self: center;
+  color: var(--muted);
+}
+
+.penalty {
+  position: absolute;
+  right: -70px;
+  bottom: 0;
+  color: var(--error);
+  font-weight: 700;
+  opacity: 0;
+}
+
+.penalty.show {
+  animation: penalty 1.2s ease-out;
+}
+
+@keyframes penalty {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-24px); }
+}
+
+.board {
+  display: grid;
+  grid-template-columns: auto repeat(var(--size), var(--cell));
+  grid-template-rows: auto repeat(var(--size), var(--cell));
+  user-select: none;
+  touch-action: none;
+}
+
+.clue {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.2s;
+}
+
+.clue.done {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.col-clue {
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 2px;
+  padding-bottom: 6px;
+}
+
+.row-clue {
+  padding-right: 8px;
+}
+
+.cell {
+  position: relative;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: background-color 0.08s;
+}
+
+.cell.edge-right { border-right: 2px solid var(--line-major); }
+.cell.edge-bottom { border-bottom: 2px solid var(--line-major); }
+.cell.major-left { border-left: 2px solid var(--line-major); }
+.cell.major-top { border-top: 2px solid var(--line-major); }
+
+.cell:hover {
+  filter: brightness(0.94);
+}
+
+.cell[data-state="filled"] {
+  background: var(--fill);
+}
+
+.cell[data-state="crossed"]::before,
+.cell[data-state="crossed"]::after,
+.cell[data-state="error"]::before,
+.cell[data-state="error"]::after {
+  content: "";
+  position: absolute;
+  inset: 50% 18%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--cross);
+  transform: rotate(45deg);
+}
+
+.cell[data-state="crossed"]::after,
+.cell[data-state="error"]::after {
+  transform: rotate(-45deg);
+}
+
+.cell[data-state="error"]::before,
+.cell[data-state="error"]::after {
+  height: 3px;
+  background: var(--error);
+}
+
+/* Color reveal on win: filled cells sweep to their palette color, crosses fade out. */
+.board.revealed .cell {
+  cursor: default;
+  border-color: transparent;
+  transition: background-color 0.5s var(--reveal-delay), border-color 0.6s;
+}
+
+.board.revealed .cell[data-state="filled"] {
+  background: var(--reveal-color);
+}
+
+.board.revealed .cell[data-state="crossed"]::before,
+.board.revealed .cell[data-state="crossed"]::after {
+  opacity: 0;
+}
+
+.board.revealed .cell:hover {
+  filter: none;
+}
+
+.win {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: appear 0.5s ease-out 0.9s both;
+}
+
+.win[hidden] {
+  display: none;
+}
+
+.win h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.win p {
+  margin: 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.again {
+  margin-top: 6px;
+  padding: 10px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.again:hover {
+  filter: brightness(1.1);
+}
+
+@keyframes appear {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+.help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}

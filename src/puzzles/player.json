@@ -1,0 +1,25 @@
+{
+  "id": "player",
+  "title": "Football Player",
+  "palette": {
+    "H": "#1f3a93",
+    "M": "#b8bcc4",
+    "S": "#d9a57a",
+    "J": "#c8102e",
+    "B": "#7a4a1d",
+    "P": "#e8c547",
+    "K": "#222222"
+  },
+  "grid": [
+    "...HHHH...",
+    "..HHHHHH..",
+    "..HMMMMH..",
+    "...SSSS...",
+    ".JJJJJJJJ.",
+    "JJ.JJJJ.BB",
+    "J..JJJJ.BB",
+    "...PPPP...",
+    "...PP.PP..",
+    "..KK...KK."
+  ]
+}
